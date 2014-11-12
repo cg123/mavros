@@ -73,6 +73,7 @@ public:
 		command_long_srv = cmd_nh.advertiseService("command", &CommandPlugin::command_long_cb, this);
 		command_int_srv = cmd_nh.advertiseService("command_int", &CommandPlugin::command_int_cb, this);
 		arming_srv = cmd_nh.advertiseService("arming", &CommandPlugin::arming_cb, this);
+		arm_hack_srv = cmd_nh.advertiseService("arm_hack", &CommandPlugin::arm_hack_cb, this);
 		set_home_srv = cmd_nh.advertiseService("set_home", &CommandPlugin::set_home_cb, this);
 		takeoff_srv = cmd_nh.advertiseService("takeoff", &CommandPlugin::takeoff_cb, this);
 		land_srv = cmd_nh.advertiseService("land", &CommandPlugin::land_cb, this);
@@ -97,6 +98,7 @@ private:
 	ros::ServiceServer command_long_srv;
 	ros::ServiceServer command_int_srv;
 	ros::ServiceServer arming_srv;
+	ros::ServiceServer arm_hack_srv;
 	ros::ServiceServer set_home_srv;
 	ros::ServiceServer takeoff_srv;
 	ros::ServiceServer land_srv;
@@ -289,6 +291,24 @@ private:
 				(req.value)? 1.0 : 0.0,
 				0, 0, 0, 0, 0, 0,
 				res.success, res.result);
+	}
+
+	bool arm_hack_cb(mavros::CommandBool::Request &req,
+			mavros::CommandBool::Response &res) {
+
+		mavlink_message_t msg;
+		mavlink_msg_command_long_pack_chan(
+				UAS_FCU(uas)->get_system_id(),
+				UAS_FCU(uas)->get_component_id(),
+				UAS_FCU(uas)->get_channel(),
+				&msg,
+				uas->get_tgt_system(),
+				MAV_COMP_ID_SYSTEM_CONTROL,
+				MAV_CMD_COMPONENT_ARM_DISARM,
+				0,
+				(req.value)? 1.0 : 0.0,
+				0, 0, 0, 0, 0, 0);
+		UAS_FCU(uas)->send_message(&msg);
 	}
 
 	bool set_home_cb(mavros::CommandHome::Request &req,
